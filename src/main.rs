@@ -43,7 +43,9 @@ fn run(args: &[String]) -> Result<ExitStatus> {
     let command_args = &args[2..];
     let tempdir = tempfile::tempdir()?;
     let root = tempdir.path();
+
     isolate_fs(root, command)?;
+    unsafe { libc::unshare(libc::CLONE_NEWPID) };
 
     let output = Command::new(command)
         .args(command_args)
@@ -54,9 +56,9 @@ fn run(args: &[String]) -> Result<ExitStatus> {
                 command, command_args
             )
         })?;
+
     io::stdout().write_all(&output.stdout)?;
     io::stderr().write_all(&output.stderr)?;
-
     Ok(output.status)
 }
 
