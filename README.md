@@ -1,9 +1,15 @@
+# Build your own Docker
+
 [![progress-banner](https://backend.codecrafters.io/progress/docker/d6f66621-6d92-4968-a1d4-fda354c07ffd)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
-This is a starting point for Rust solutions to the
+Welcome to the "Build Your Own HTTP Server" for Rust solutions!
+
+## Overview
+
+This repository serves as a my Rust solutions to the
 ["Build Your Own Docker" Challenge](https://codecrafters.io/challenges/docker).
 
-In this challenge, you'll build a program that can pull an image from
+You'll build a program that can pull an image from
 [Docker Hub](https://hub.docker.com/) and execute commands in it. Along the way,
 we'll learn about [chroot](https://en.wikipedia.org/wiki/Chroot),
 [kernel namespaces](https://en.wikipedia.org/wiki/Linux_namespaces), the
@@ -12,22 +18,9 @@ we'll learn about [chroot](https://en.wikipedia.org/wiki/Chroot),
 **Note**: If you're viewing this repo on GitHub, head over to
 [codecrafters.io](https://codecrafters.io) to try the challenge.
 
-# Passing the first stage
 
-The entry point for your Docker implementation is `src/main.rs`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
 
-```sh
-git add .
-git commit -m "pass 1st stage" # any msg
-git push origin master
-```
-
-That's all!
-
-# Stage 2 & beyond
-
-Note: This section is for stages 2 and beyond.
+## Getting started
 
 You'll use linux-specific syscalls in this challenge. so we'll run your code
 _inside_ a Docker container.
@@ -52,3 +45,17 @@ mydocker run ubuntu:latest /usr/local/bin/docker-explorer echo hey
 
 This command compiles your Rust project, so it might be slow the first time you
 run it. Subsequent runs will be fast.
+
+## Project structure
+```bash
+├── docker
+│  ├── auth.rs
+│  ├── commands.rs
+│  ├── constants.rs
+│  ├── image.rs
+│  └── mod.rs
+├── filesystem.rs
+├── lib.rs
+├── main.rs
+└── utils.rs
+```
