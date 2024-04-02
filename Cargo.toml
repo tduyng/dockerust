@@ -6,7 +6,7 @@
 #
 # DON'T EDIT THIS!
 [package]
-name = "docker-starter-rust"
+name = "dockerust"
 version = "0.1.0"
 edition = "2021"
 

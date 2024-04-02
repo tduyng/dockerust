@@ -1,5 +1,5 @@
 use anyhow::Result;
-use docker_starter_rust::run;
+use dockerust::run;
 
 fn main() -> Result<()> {
     let args = std::env::args().collect::<Vec<String>>();
