@@ -1,6 +1,9 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use std::fs::{copy, DirBuilder, File};
 use std::io::{self, Write};
+use std::os::unix::fs::chroot;
+use std::path::Path;
 use std::process::{exit, Command, ExitStatus};
 
 #[derive(Parser)]
@@ -38,6 +41,10 @@ fn main() -> Result<()> {
 fn run(args: &[String]) -> Result<ExitStatus> {
     let command = &args[1];
     let command_args = &args[2..];
+    let tempdir = tempfile::tempdir()?;
+    let root = tempdir.path();
+    isolate_fs(root, command)?;
+
     let output = Command::new(command)
         .args(command_args)
         .output()
@@ -51,4 +58,31 @@ fn run(args: &[String]) -> Result<ExitStatus> {
     io::stderr().write_all(&output.stderr)?;
 
     Ok(output.status)
+}
+
+fn isolate_fs(root: &Path, command: &str) -> Result<()> {
+    let cmd_path = Path::new(command);
+    let parent_path = cmd_path.parent().unwrap().to_str().unwrap();
+    let parent_dir = &parent_path[1..];
+    let cmd_name = cmd_path.file_name().unwrap();
+
+    let abs_dir = root.join(parent_dir);
+    let abs_path = abs_dir.join(cmd_name);
+    let dev_dir = root.join("dev");
+    let dev_null = dev_dir.join("null");
+
+    mkdir(&dev_dir)?;
+    mkdir(&abs_dir)?;
+    File::create(dev_null)?;
+    copy(cmd_path, abs_path)?;
+
+    chroot(root)?;
+    std::env::set_current_dir("/")?;
+
+    Ok(())
+}
+
+fn mkdir(path: &Path) -> Result<()> {
+    DirBuilder::new().recursive(true).create(path)?;
+    Ok(())
 }
