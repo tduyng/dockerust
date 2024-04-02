@@ -8,13 +8,17 @@ use tar::Archive;
 use crate::{get_auth_token, DOCKER_HUB, DOCKER_REGISTRY};
 
 #[derive(Deserialize, Debug)]
-struct ImageManifest {
-    layers: Vec<ImageConfig>,
+pub struct ImageManifest {
+    pub layers: Vec<ImageConfig>,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
-struct ImageConfig {
-    digest: String,
+pub struct ImageConfig {
+    pub digest: String,
+    #[serde(rename = "mediaType")]
+    pub media_type: String,
+    pub size: usize,
 }
 
 pub fn download_image(image: &str, path: impl AsRef<Path>) -> Result<()> {
@@ -22,10 +26,7 @@ pub fn download_image(image: &str, path: impl AsRef<Path>) -> Result<()> {
     let auth_token = get_auth_token(image)?;
 
     let manifest: ImageManifest = client
-        .get(format!(
-            "{}/library/{}/manifests/latest",
-            DOCKER_HUB, image
-        ))
+        .get(format!("{}/library/{}/manifests/latest", DOCKER_HUB, image))
         .header(
             reqwest::header::ACCEPT,
             "application/vnd.docker.distribution.manifest.v2+json",
