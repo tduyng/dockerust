@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::io::{self, Write};
-use std::process::{Command, Stdio};
+use std::process::{exit, Command, ExitStatus};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -19,32 +19,36 @@ enum Commands {
     },
 }
 
-// Usage: your_docker.sh run <image> <command> <arg1> <arg2> ...
 fn main() -> Result<()> {
     let args = Args::parse();
 
     match args.command {
         Commands::Run { args } => {
-            let command = &args[1];
-            let command_args = &args[2..];
-            let output = Command::new(command)
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .args(command_args)
-                .output()
-                .with_context(|| {
-                    format!(
-                        "Tried to run '{}' with arguments {:?}",
-                        command, command_args
-                    )
-                })?;
-            if !output.status.success() {
-                std::process::exit(1);
+            let status = run(&args)?;
+
+            if let Some(code) = status.code() {
+                exit(code);
             }
-            io::stdout().write_all(&output.stdout)?;
-            io::stderr().write_all(&output.stderr)?;
         }
     }
 
     Ok(())
+}
+
+fn run(args: &[String]) -> Result<ExitStatus> {
+    let command = &args[1];
+    let command_args = &args[2..];
+    let output = Command::new(command)
+        .args(command_args)
+        .output()
+        .with_context(|| {
+            format!(
+                "Tried to run '{}' with arguments {:?}",
+                command, command_args
+            )
+        })?;
+    io::stdout().write_all(&output.stdout)?;
+    io::stderr().write_all(&output.stderr)?;
+
+    Ok(output.status)
 }
