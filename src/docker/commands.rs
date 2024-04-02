@@ -5,27 +5,25 @@ use std::process::{exit, Command};
 use crate::{download_image, isolate_fs, isolate_process};
 
 pub fn run(args: &[String]) -> Result<()> {
-    let image = &args[1];
-    let command = &args[2];
-    let command_args = &args[3..];
+    // Extract CLI arguments
+    let image_and_version = &args[2];
+    let cmd_bin = &args[3];
+    let cmd_args = &args[4..];
+
+    // Create a temporary directory to extract the image
     let tempdir = tempfile::tempdir()?;
     let root = tempdir.path();
 
     // Download and extract docker image
-    download_image(image, root)?;
+    download_image(image_and_version, root)?;
 
-    isolate_fs(root, command)?;
+    isolate_fs(root, cmd_bin)?;
     isolate_process()?;
 
-    let output = Command::new(command)
-        .args(command_args)
+    let output = Command::new(cmd_bin)
+        .args(cmd_args)
         .output()
-        .with_context(|| {
-            format!(
-                "Tried to run '{}' with arguments {:?}",
-                command, command_args
-            )
-        })?;
+        .with_context(|| format!("Tried to run '{}' with arguments {:?}", cmd_bin, cmd_args))?;
 
     io::stdout().write_all(&output.stdout)?;
     io::stderr().write_all(&output.stderr)?;

@@ -5,34 +5,42 @@ use serde::Deserialize;
 use std::path::Path;
 use tar::Archive;
 
-use crate::{get_auth_token, DOCKER_HUB, DOCKER_REGISTRY};
+use crate::{get_auth_token, DOCKER_HUB};
 
 #[derive(Deserialize, Debug)]
-pub struct ImageManifest {
-    pub layers: Vec<ImageConfig>,
+struct ImageManifest {
+    layers: Vec<ImageConfig>,
 }
 
-#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
-pub struct ImageConfig {
-    pub digest: String,
-    #[serde(rename = "mediaType")]
-    pub media_type: String,
-    pub size: usize,
+struct ImageConfig {
+    digest: String,
 }
 
-pub fn download_image(image: &str, path: impl AsRef<Path>) -> Result<()> {
+fn extract_image_info(image_and_version: &str) -> (String, String) {
+    match image_and_version.split_once(':') {
+        Some((image, version)) => (image.to_string(), version.to_string()),
+        None => (image_and_version.to_string(), "latest".to_string()),
+    }
+}
+
+pub fn download_image(image_and_version: &str, path: impl AsRef<Path>) -> Result<()> {
     let client = Client::new();
-    let auth_token = get_auth_token(image)?;
+    let (image_name, image_version) = extract_image_info(image_and_version);
+    let auth_token = get_auth_token(&image_name)?;
 
     let manifest: ImageManifest = client
-        .get(format!("{}/library/{}/manifests/latest", DOCKER_HUB, image))
+        .get(format!(
+            "{}/library/{}/manifests/{}",
+            DOCKER_HUB, image_name, image_version
+        ))
         .header(
             reqwest::header::ACCEPT,
             "application/vnd.docker.distribution.manifest.v2+json",
         )
         .bearer_auth(auth_token.clone())
-        .send()?
+        .send()
+        .context("Failed to get image manifest")?
         .json()
         .context("Failed to parse image manifest")?;
 
@@ -40,7 +48,7 @@ pub fn download_image(image: &str, path: impl AsRef<Path>) -> Result<()> {
         let layer_bytes = client
             .get(&format!(
                 "{}/library/{}/blobs/{}",
-                DOCKER_REGISTRY, image, layer.digest
+                DOCKER_HUB, image_name, layer.digest
             ))
             .bearer_auth(auth_token.clone())
             .send()

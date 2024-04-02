@@ -3,7 +3,9 @@ use docker_starter_rust::run;
 
 fn main() -> Result<()> {
     let args = std::env::args().collect::<Vec<String>>();
-    run(&args)?;
-
-    Ok(())
+    let command = &args[1];
+    match command.as_ref() {
+        "run" => Ok(run(&args)?),
+        _ => Ok(()),
+    }
 }
